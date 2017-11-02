@@ -1,6 +1,8 @@
 package version1;
 
+import java.util.Arrays;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 
 public class Network {
@@ -63,6 +65,7 @@ public class Network {
 		}
 		tail = new Layer(struct[struct.length - 1], prev.numNeurons);
 		prev.next = tail;
+		tail.prev = prev;
 		
 	}
 	
@@ -87,7 +90,7 @@ public class Network {
 		return output;
 	}
 	
-	private void trainOne(double[] x, double[] y, int epochs, int learningRate) {
+	public void trainOne(double[] x, double[] y, int epochs, int learningRate) {
 		
 		/*
 		 * stochastic gradient descent
@@ -104,14 +107,10 @@ public class Network {
 		int l = 1;
 		while (currentLayer != null) {
 			output = new double[currentLayer.numNeurons];
-			for (int i = 0; i < output.length; i++) {
-				double result = 0;
-				for (int j = 0; j < input.length; j++) { // within neuron now
-					result += currentLayer.weights[i][j] * input[j];
-				}
-				output[i] = result; //sigmoid(result);
-			}
+			for (int i = 0; i < output.length; i++)
+				output[i] = dot(currentLayer.weights[i], input); //sigmoid(result);
 			activations.put(l++, output); // put in activation map
+			/** Move onto next layer **/
 			input = output;
 			currentLayer = currentLayer.next;
 		}
@@ -130,18 +129,28 @@ public class Network {
 		
 		Layer cLayer = tail.prev;
 		int layerIndex = numLayers - 1;
-		while (cLayer.prev != null) {
+		while (cLayer != null) {
 			
 			/** calculate error for current layer **/
 			double[] nextError = errors.get(layerIndex + 1);
 			double[][] nextWeightsT = transpose(cLayer.next.weights);
-			double[] error = hadmard(multiply(nextWeightsT, nextError), 
-					sigmoidPrime(activations.get(layerIndex--)));
+			double[] error = hadmard(multiply(nextWeightsT, nextError), activations.get(layerIndex--));
+					//sigmoidPrime(activations.get(layerIndex--)));
 			errors.put(layerIndex + 1, error);
 			/** backpropagate **/
 			nextError = error;
 			cLayer = cLayer.prev;
 			
+		}
+		
+		// Debug
+		System.out.println("Activations-----");
+		for (Entry<Integer, double[]> entry: activations.entrySet()) {
+			System.out.println("Layer " + entry.getKey() + ": " + Arrays.toString(entry.getValue()));
+		}
+		System.out.println("Error-----");
+		for (Entry<Integer, double[]> entry: errors.entrySet()) {
+			System.out.println("Layer " + entry.getKey() + ": " + Arrays.toString(entry.getValue()));
 		}
 		
 		
@@ -241,6 +250,17 @@ public class Network {
 		
 		return newVector;
 		
+	}
+	
+	/*
+	 * Requirements: A and B should be the same length
+	 */
+	public static double dot(double[] A, double[] B) {
+		double result = 0.0;
+		for (int i = 0; i < A.length; i++) { // within neuron now
+			result += A[i] * B[i];
+		}
+		return result;
 	}
 
 }
