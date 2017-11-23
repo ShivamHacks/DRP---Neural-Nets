@@ -92,42 +92,40 @@ def activation(x):
 	#return 1.0/(1.0+np.exp(-x)) # Sigmoid
 
 def activation_derivative(x, epsilon=0.1):
-	# Leaky ReLu
-	#gradients = (x > 0) * 1
-	#gradients[gradients == 0] = epsilon
-	#print "Gradient: " + str(gradients)
-	#return gradients
+	# consider Leaky ReLu
 	return (x > 0) * 1 #ReLu
 	#return activation(x)*(1-activation(x)) # Sigmoid
 
+# Test Network
 
 myNN = Network([1, 3, 1])
-def func_to_predict(x): return x ** 3
-#np.sin(3.14 * x)
+def func_to_predict(x): return x ** 2
 
-# Prepare dataset for quadratic
-dataRange = 2
+dataRange = [-1.0, 1.0]
 step = 0.05
-numDataPoints = int(dataRange / step)
+numDataPoints = int( (dataRange[1] - dataRange[0]) / step) + 1
 learning_rate = 0.05
 numEpochs = 100
 
-x = np.arange(-dataRange / 2, dataRange / 2, step).reshape(numDataPoints, 1)
+x = np.arange(dataRange[0], dataRange[1] + step, step)
 y = func_to_predict(x)
 x, y = shuffle(x, y)
 
-myNN.train(x, y, learning_rate, numEpochs)
+train_x = np.array(x).reshape(numDataPoints, 1)
+train_y = np.array(y).reshape(numDataPoints, 1)
 
-x_test = np.array(myNN.evaluate_multiple(x)).reshape(1, numDataPoints)
+myNN.train(train_x, train_y, learning_rate, numEpochs)
+
+y_test = np.array(myNN.evaluate_multiple(x)).reshape(1, numDataPoints)
 
 # PLOT
 
 import matplotlib.pyplot as plt
 
-plt.scatter(x.reshape(1, numDataPoints), y.reshape(1, numDataPoints), color='b')
-plt.scatter(x_test, y.reshape(1, numDataPoints), color='r')
+plt.scatter(train_x, train_y, color='b')
+plt.scatter(train_x, y_test, color='r')
 
-x_graph = np.linspace(-1, 1, 1000)
+x_graph = np.linspace(dataRange[0], dataRange[1], 1000)
 plt.plot(x_graph, func_to_predict(x_graph), color='y')
 
 plt.show()
