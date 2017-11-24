@@ -4,7 +4,7 @@ from sklearn import preprocessing
 from sklearn.utils import shuffle
 from sklearn.metrics import mean_squared_error
 
-np.random.seed(6)
+np.random.seed(10)
 
 # possibly change talk topic to:
 # Neural Networks as Polynomial Regressors
@@ -55,6 +55,54 @@ class Network(object):
 		for i in range(len(input)):
 			output.append(self.evaluate(input[i]))
 		return output
+
+	def train_one_approx(self, train_x, train_y, learning_rate, eta=0.1):
+
+		# need to make a copy of original weight vector
+		weight_gradients = []
+		bias_gradients = []
+
+		for i in range(self.numLayers):
+			# in weight set for a layer
+			layer_weight_gradients = []
+			layer_bias_gradients = []
+			for j in range(len(self.layers[i].weights)):
+				# in weight set for a neuron
+				neuron_weight_gradients = []
+				
+				self.layers[i].biases[j] += eta
+				cost_adjusted_bias_more = self.cost(self.evaluate(train_x), train_y)
+				self.layers[i].biases[j] -= 2 * eta
+				cost_adjusted_bias_less = self.cost(self.evaluate(train_x), train_y)
+				self.layers[i].biases[j] += eta
+				bias_gradient = (cost_adjusted_bias_more - cost_adjusted_bias_less) / (2 * eta)
+				layer_bias_gradients.append(bias_gradient)
+
+				for k in range(len(self.layers[i].weights[j])):
+					# current weight --> self.layers[i].weights[j][k]
+					self.layers[i].weights[j][k] += eta # add delta
+					cost_adjusted_weight_more = self.cost(self.evaluate(train_x), train_y)
+					self.layers[i].weights[j][k] -= 2 * eta # subtract delta
+					cost_adjusted_weight_less = self.cost(self.evaluate(train_x), train_y)
+					self.layers[i].weights[j][k] += eta # bring back to normal
+					weight_gradient = (cost_adjusted_weight_more - cost_adjusted_weight_less) / (2 * eta)
+					neuron_weight_gradients.append(weight_gradient)
+
+				layer_weight_gradients.append(neuron_weight_gradients)
+			weight_gradients.append(layer_weight_gradients)
+
+		for i in range(len(weight_gradients)):
+			for j in range(len(weight_gradients[i])):
+				for k in range(len(weight_gradients[i][j])):
+					self.layers[i].weights[j][k] -= learning_rate * weight_gradients[i][j][k]
+		
+		for i in range(len(bias_gradients)):
+			for j in range(len(bias_gradients[i])):
+				self.layers[i].biases[j] -= learning_rate * bias_gradients[i][j]
+
+	def cost(self, output, actual):
+		return 0.5 * np.linalg.norm(output - actual)
+
 
 	def train_one(self, trainX, trainY, learningRate):
 
@@ -114,7 +162,7 @@ class Network(object):
 		X, y = shuffle(X, y)
 		for i in range(epochs):
 			for j in range(len(X)):
-				self.train_one(X[j], y[j], learning_rate)
+				self.train_one_approx(X[j], y[j], learning_rate)
 			print 'Completed Epoch: ' + str(i+1) + ' Error: ' + str(mean_squared_error(self.evaluate_multiple(X), y))
 
 
