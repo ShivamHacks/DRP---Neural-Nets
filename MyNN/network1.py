@@ -62,25 +62,34 @@ class Network(object):
 		layer_inputs = []
 		layer_outputs = []
 		input = trainX
-		for i in range(0, self.numLayers): # don't need last output
+		for i in range(0, self.numLayers - 1): # don't need last output
 			layer_inputs.append(input)
 			input = activation(self.layers[i].pass_through(input))
 			layer_outputs.append(input)
+		layer_inputs.append(input)
+		layer_outputs.append(self.layers[self.numLayers - 1].pass_through(input))
 
 		error = self.evaluate(trainX) - trainY
-		for i in reversed(range(0, self.numLayers)):
+		current_layer_weights = deepcopy(self.layers[self.numLayers - 1].weights)
+		self.layers[self.numLayers - 1].weights -= learningRate * np.outer(error, layer_outputs[self.numLayers - 2]) # output error linearly related to output layer input
+		self.layers[i].biases -= learningRate * error
+		#print "Current: " + str(current_layer_weights)
+		#print "Fixed: " + str(self.layers[self.numLayers - 1].weights)
+		error = np.multiply(np.dot(current_layer_weights.T , error), layer_inputs[self.numLayers - 1])
+		for i in reversed(range(0, self.numLayers - 1)):
 			#print "SHAPE: "+ str(error.shape)
 			current_layer_weights = deepcopy(self.layers[i].weights)
 			#print "CURRENT: " + str(current_layer_weights)
 			#print "prev outputs: " + str(layer_outputs[i - 1])
 			#print "ADJUSTMENT: " + str(learningRate * np.outer(error, layer_outputs[i - 1]))
-			self.layers[i].weights -= learningRate * np.outer(error, layer_outputs[i - 1]) # output error linearly related to output layer input
+			self.layers[i].weights -= learningRate * np.outer(error, layer_outputs[i - 1])
 			#print "ADJUSTED: " + str(self.layers[i].weights)
 			self.layers[i].biases -= learningRate * error
 			error = np.multiply(np.dot(current_layer_weights.T , error), activation_derivative(layer_inputs[i]))
 			#error = error.reshape(error.shape[0], 1)
 
 	def train(self, X, y, learning_rate, epochs):
+		X, y = shuffle(X, y)
 		for i in range(epochs):
 			for j in range(len(X)):
 				self.train_one(X[j], y[j], learning_rate)
@@ -99,17 +108,16 @@ def activation_derivative(x, epsilon=0.1):
 # Test Network
 
 myNN = Network([1, 3, 1])
-def func_to_predict(x): return x ** 2
+def func_to_predict(x): return x ** 3
 
-dataRange = [-1.0, 1.0]
+dataRange = [-1, 1.0]
 step = 0.05
 numDataPoints = int( (dataRange[1] - dataRange[0]) / step) + 1
-learning_rate = 0.05
-numEpochs = 100
+learning_rate = 0.01
+numEpochs = 200
 
 x = np.arange(dataRange[0], dataRange[1] + step, step)
 y = func_to_predict(x)
-x, y = shuffle(x, y)
 
 train_x = np.array(x).reshape(numDataPoints, 1)
 train_y = np.array(y).reshape(numDataPoints, 1)
