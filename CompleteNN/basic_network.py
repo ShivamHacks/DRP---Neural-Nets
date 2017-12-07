@@ -12,6 +12,8 @@ simple, easily readable, and easily modifiable.  It is not optimized,
 and omits many desirable features.
 """
 
+from sklearn.metrics import mean_squared_error
+
 #### Libraries
 # Standard library
 import random
@@ -63,7 +65,7 @@ class Network(object):
             #for mini_batch in mini_batches:
             #    self.update_mini_batch(mini_batch, eta)
             if test_data:
-                print "Epoch {0}: {1} / {2}".format(j, self.evaluate(test_data), n_test)
+                print "Epoch {0}: {1}".format(j, self.evaluate(test_data))
             else:
                 print "Epoch {0} complete".format(j)
 
@@ -123,9 +125,13 @@ class Network(object):
         network outputs the correct result. Note that the neural
         network's output is assumed to be the index of whichever
         neuron in the final layer has the highest activation."""
-        test_results = [(np.argmax(self.feedforward(x)), y)
-                        for (x, y) in test_data]
-        return sum(int(x == y) for (x, y) in test_results)
+       # print test_data
+        #return mean_squared_error(zip(*test_data))
+
+        
+        test_results = [self.feedforward(x) - y for (x, y) in test_data]
+        return np.mean(np.array(test_results) ** 2)
+        
 
     def cost_derivative(self, output_activations, y):
         """Return the vector of partial derivatives \partial C_x /

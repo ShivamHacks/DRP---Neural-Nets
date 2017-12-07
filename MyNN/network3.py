@@ -122,12 +122,12 @@ def generate_data(data_range, step, data_split, function_to_predict):
 
 myNN = Network([1, 3, 1])
 
-def func_to_predict(x): return 50 * (x-1) ** 2
+def func_to_predict(x): return x ** 2 #50 * x ** 2 #x ** 2 * np.sin(1 / x)
 
-train_x, train_y, test_x, test_y, continuous_x = generate_data([-1.0, 1.0], 0.01, 0.8, func_to_predict)
+train_x, train_y, test_x, test_y, continuous_x = generate_data([-1.0, 1.0], 0.005, 0.8, func_to_predict)
 
 # Train Network
-learning_rate = 0.1
+learning_rate = 0.01
 num_epochs = 50
 myNN.train(train_x, train_y, learning_rate, num_epochs)
 
